@@ -1,6 +1,6 @@
-# 🪐 Exoplanet Classifier
+# Exoplanet Classifier
 
-## 🌌 Overview
+## Overview
 This project applies a Neural Network to detect whether an object is an **exoplanet** using NASA's **Kepler** mission data.  
 The model classifies Kepler Objects of Interest (KOIs) into:
 - **Confirmed Exoplanets**
@@ -11,7 +11,7 @@ The neural network learns from various astrophysical features (orbital period, s
 
 ---
 
-## 🧠 Model Architecture
+## Model Architecture
 The classifier is implemented using **TensorFlow/Keras** and trained on labeled Kepler data.  
 
 **Architecture:**
@@ -29,7 +29,7 @@ The classifier is implemented using **TensorFlow/Keras** and trained on labeled 
 
 ---
 
-## 📊 Data Description
+## Data Description
 The dataset used is **Kepler Q1–Q17 DR24** (NASA Exoplanet Archive).  
 Each observation includes astrophysical and photometric parameters related to potential exoplanet detections.
 
@@ -47,7 +47,7 @@ Each observation includes astrophysical and photometric parameters related to po
 
 ---
 
-## ⚙️ Data Preprocessing
+## Data Preprocessing
 1. **Feature selection** – Extracts relevant astrophysical parameters from the Kepler dataset  
 2. **Missing values** – Replaced using **median imputation**  
 3. **Label mapping:**
@@ -59,7 +59,7 @@ Each observation includes astrophysical and photometric parameters related to po
 
 ---
 
-## 🧩 Model Training
+## Model Training
 The model is trained using TensorFlow’s Sequential API for **50 epochs** with a batch size of **32**, using early validation on the held-out set.
 
 ```python
