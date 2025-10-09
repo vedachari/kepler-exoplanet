@@ -8,99 +8,53 @@ import tensorflow as tf
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 
-df = pd.read_csv('q1_q17_dr24_koi_2025.09.09_17.48.32.csv', delimiter=',')
+df = pd.read_csv('cumulative.csv', delimiter=',') #used kaggle dataset for easier use
 
+print(df.info())
 print(len(df.columns))
+print(df.shape)
+print(df.isnull().sum())
 
-# Classification:
-# Exoplanet Archive Disposition (koi_disposition): confirmed, false positive, candidate (used as labels)
-# disposition using kepler data (koi_pdisposition): CANDIDATE, FALSE POSITIVE, CONFIRMED
-# columns of interest:
-# koi_fpflag_nt: 1 if KOI light curve not consistent with transiting planet
-# koi_fpflag_ss: 1 if KOI observed to be caused by eclipsing binary in Kepler data
-# koi_fpflag_co: 1 if KOI observed to be caused by nearby star
-# koi_fpflag_ec: 1 if KOI observed to be caused flux contamination of another object
-# koi_period: orbital period in days
-# koi_time0bk: transit epoch in BJD (Barycentric Julian Date)
-# koi_eccen: orbital eccentricity
-# koi_impact: transit impact parameter
-# koi_duration: transit duration in hours
-# koi_depth: transit depth in ppm
-# koi_ror: ratio of planet radius to stellar radius
-# koi_srho: stellar density in g/cm^3
-# koi_prad: planet radius in Earth radii
+# drop Equilibrium temp 1 and 2 (koi_teq_err1 and koi_teq_err2) since most are missing
+# drop TCE deliver name (koi_tce_delivname ) since most are the same 
+# drop kepler name (kepler_name)
 
+df.drop(columns = ['koi_teq_err1', 'koi_teq_err2', 'koi_tce_delivname', 'kepler_name'], inplace=True)
 
-columns_of_interest = [
-    "koi_disposition", # label
-    "koi_fpflag_nt",
-    "koi_fpflag_ss",
-    "koi_fpflag_co",
-    "koi_fpflag_ec",
-    "koi_period",
-    "koi_time0bk",
-    "koi_eccen",
-    "koi_impact",
-    "koi_duration",
-    "koi_depth",
-    "koi_ror",
-    "koi_srho",
-    "koi_prad",
-    "koi_teq",  # equilibrium temperature
-    "koi_insol", # insolation flux
-    "koi_model_snr", # signal to noise
-    "koi_num_transits", # number of observed transits
-    "koi_steff", # stellar effective temperature
-    "koi_slogg", # stellar surface gravity
-    "koi_srad", # stellar radius
-    "koi_smass", # stellar mass
-    "koi_kepmag", # Kepler magnitude
-    "koi_depth_err1", 
-    "koi_depth_err2",
-    "koi_ror_err1", 
-    "koi_ror_err2",
-    "koi_srho_err1", 
-    "koi_srho_err2",
-    "koi_prad_err1", 
-    "koi_prad_err2",
-    "koi_gmag",
-    "koi_rmag", 
-    "koi_imag", 
-    "koi_zmag", 
-    "koi_jmag", 
-    "koi_hmag", 
-    "koi_kmag"
-]
+# Separate out categorical features
+# ['kepoi_name' KOINAME, 'koi_disposition' Disposition, 'koi_pdisposition' Disposition using Kepler Data]
 
-df = df[columns_of_interest]
-print(df.columns)
-print(df[columns_of_interest].isna().sum())
+#fill in null for numerical features with mean
+df= df.fillna(df.median(numeric_only=True))
+print("fixed null: ", df.isna().sum())
 
+# Explor Disposition and Disposition using Kepler Data
+print('Disposition Counts')
+print(df['koi_disposition'].value_counts())
+print('Disposition Counts Using Kepler Data')
+print(df['koi_pdisposition'].value_counts())
 
-# Fill remaining NaNs with median
-df = df.fillna(df.median(numeric_only=True))
-print(df.isna().sum())
+# koi_pdisposition is more balanced (consistent with my approach with other csv)
+
 
 # Map labels for ML:
-# CONFIRMED = 1, FALSE POSITIVE = 0, CANDIDATE = -1 (holdout test set)
-label_map = {"CONFIRMED": 1, "FALSE POSITIVE": 0, "CANDIDATE": -1}
-df["label"] = df["koi_disposition"].map(label_map)
+# CONFIRMED = 1, FALSE POSITIVE = 0
+label_map = {"FALSE POSITIVE": 0, "CANDIDATE": 1}
+df["label"] = df["koi_pdisposition"].map(label_map)
+print(df["label"].value_counts(dropna=False))
+
 
 # Features
-X = df.drop(columns=["koi_disposition", "label"]).values
 y = df["label"].values
+X = df.drop(columns=["koi_pdisposition", "koi_disposition", "label", "kepid","kepoi_name"], axis=1)
 
-# split into training and validation
-# use candidate as test set
-mask_trainval = y != -1
-X_trainval = X[mask_trainval]
-y_trainval = y[mask_trainval]
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=1, shuffle = True)
 
-# holdout test set: disposition = CANDIDATE
-mask_test = y == -1
-X_candidates = X[mask_test]
-
-X_train, X_val, y_train, y_val = train_test_split(X_trainval, y_trainval, test_size=0.2, random_state=42, stratify=y_trainval)
+#Scale X
+scaler = StandardScaler()
+scaler.fit(X_train)
+X_train = pd.DataFrame(scaler.transform(X_train), index = X_train.index, columns = X_train.columns)
+X_val = pd.DataFrame(scaler.transform(X_val), index = X_val.index, columns = X_val.columns)
 
 #build neural netowrk
 model = Sequential([
@@ -125,10 +79,10 @@ print(classification_report(y_val, y_val_pred))
 print("Validation Confusion Matrix:")
 print(confusion_matrix(y_val, y_val_pred))
 
-# apply to candidate set
-candidate_probs = model.predict(X_candidates)
+# # apply to candidate set
+# candidate_probs = model.predict(X_candidates)
 
-df_candidates = df[mask_test].copy()
-df_candidates['predicted_probability'] = candidate_probs
-df_candidates.to_csv('candidates_with_predictions.csv', index=False)
-print("Predictions for candidates saved to 'candidates_with_predictions.csv'")
+# df_candidates = df[mask_test].copy()
+# df_candidates['predicted_probability'] = candidate_probs
+# df_candidates.to_csv('candidates_with_predictions.csv', index=False)
+# print("Predictions for candidates saved to 'candidates_with_predictions.csv'")
