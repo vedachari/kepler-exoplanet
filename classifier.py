@@ -114,26 +114,3 @@ plt.title('Training and Validation Loss')
 
 plt.savefig('metrics_type.png')
 plt.show()
-
-
-# Validation Classification Report:
-#               precision    recall  f1-score   support
-
-#            0       0.99      0.98      0.98      1017
-#            1       0.97      0.99      0.98       896
-
-#     accuracy                           0.98      1913
-#    macro avg       0.98      0.98      0.98      1913
-# weighted avg       0.98      0.98      0.98      1913
-
-# Validation Confusion Matrix:
-# [[994  23]
-#  [ 11 885]]
-
-# # apply to candidate set
-# candidate_probs = model.predict(X_candidates)
-
-# df_candidates = df[mask_test].copy()
-# df_candidates['predicted_probability'] = candidate_probs
-# df_candidates.to_csv('candidates_with_predictions.csv', index=False)
-# print("Predictions for candidates saved to 'candidates_with_predictions.csv'")

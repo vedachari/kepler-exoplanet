@@ -29,8 +29,10 @@ The classifier is implemented using **TensorFlow/Keras** and trained on labeled 
 ---
 
 ## Data Description
-The dataset used is **Kepler Q1–Q17 DR24** (NASA Exoplanet Archive).  
+The dataset used is assembled by the **Kepler Space Observatory** (NASA Exoplanet Archive).  
 Each observation includes astrophysical and photometric parameters related to potential exoplanet detections.
+
+URL: [Kaggle](https://www.kaggle.com/datasets/nasa/kepler-exoplanet-search-results/data "Kaggle")
 
 ### Key Columns Used
 - **koi_fpflag_nt** – Light curve not consistent with transiting planet  
