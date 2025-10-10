@@ -3,9 +3,8 @@
 ## Overview
 This project applies a Neural Network to detect whether an object is an **exoplanet** using NASA's **Kepler** mission data.  
 The model classifies Kepler Objects of Interest (KOIs) into:
-- **Confirmed Exoplanets**
-- **False Positives**
-- **Candidates** (potential exoplanets held out for testing)
+- **False Positives**: not an exoplanet
+- **Candidates**: potentially an exoplanet
 
 The neural network learns from various astrophysical features (orbital period, stellar radius, temperature, etc.) to distinguish between true exoplanet signals and false detections.
 
@@ -49,24 +48,49 @@ Each observation includes astrophysical and photometric parameters related to po
 
 ## Data Preprocessing
 1. **Feature selection** – Extracts relevant astrophysical parameters from the Kepler dataset  
-2. **Missing values** – Replaced using **median imputation**  
-3. **Label mapping:**
-   - `CONFIRMED` → `1`
+2. **Missing values** – Replaced using **median imputation**
+3. **Choosing label** - Disposition counts using Kepler Data (`koi_pdisposition`) is more balanced. I used that as the labels instead of Disposition count (`koi_disposition`) .
+4. **Label mapping:**
    - `FALSE POSITIVE` → `0`
-   - `CANDIDATE` → `-1` (excluded from training; used for prediction)
-4. **Train/Validation Split:** 80/20 stratified split  
-5. **Feature scaling:** Standardized using `StandardScaler` from scikit-learn  
+   - `CANDIDATE` → `1` (excluded from training; used for prediction)
+5. **Train/Validation Split:** 70/15/15 stratified split  
+6. **Feature scaling:** Standardized using `StandardScaler` from scikit-learn  
 
 ---
 
 ## Model Training
-The model is trained using TensorFlow’s Sequential API for **50 epochs** with a batch size of **32**, using early validation on the held-out set.
+The model is trained using TensorFlow’s Sequential API for **50 epochs** with a batch size of **64**, using early validation on the held-out set.
 
 ```python
 history = model.fit(
     X_train, y_train,
     epochs=50,
-    batch_size=32,
+    batch_size=64,
     validation_data=(X_val, y_val),
     verbose=1
 )
+```
+
+## Results
+My neural network was trained to classify exoplanet candidates as either **CANDIDATE** or **FALSE POSITIVE** using the Kepler dataset. The model achieved **98%** accuracy. 
+
+### Classification Report
+| Metric | Class 0 (False Positive) | Class 1 (Candidate) | Overall  |
+|--------|-------------------------|-------------------|---------|
+| Precision | 0.99 | 0.98 | - |
+| Recall    | 0.98 | 0.98 | - |
+| F1-Score  | 0.98 | 0.98 | 0.98 |
+| Support   | 763  | 672  | 1435 |
+
+**Validation Confusion Matrix:**
+$ \begin{pmatrix}
+751 & 12 \\
+11 & 661
+\end{pmatrix} $
+
+### ROC and PR Metrics
+- **ROC-AUC:** 0.9987  
+- **PR-AUC:** 0.9984  
+
+These results indicate that the model performs extremely well on unseen test data, with high precision and recall for both classes, and very few misclassifications.  
+
