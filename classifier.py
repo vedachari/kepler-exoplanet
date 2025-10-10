@@ -1,12 +1,11 @@
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.utils.class_weight import compute_class_weight 
-import tensorflow as tf
+from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, average_precision_score
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense, Dropout
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 
 df = pd.read_csv('cumulative.csv', delimiter=',') #used kaggle dataset for easier use
 
@@ -69,7 +68,8 @@ model = Sequential([
 
 model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-history = model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_val, y_val), verbose = 1)
+history = model.fit(X_train, y_train, epochs=50, batch_size=64, validation_data=(X_val, y_val), verbose = 1)
+# hyperparam tuning: increased batch size from 32 to 64 to remove gradient noise
 
 # Evaluate the model
 y_val_pred = (model.predict(X_val) > 0.5).astype("int32")
@@ -78,6 +78,55 @@ print("Validation Classification Report:")
 print(classification_report(y_val, y_val_pred))
 print("Validation Confusion Matrix:")
 print(confusion_matrix(y_val, y_val_pred))
+
+#ROC_AUC and PR_AUC
+probs = model.predict(X_val).ravel()
+print("ROC-AUC:", roc_auc_score(y_val, probs))
+print("PR-AUC:", average_precision_score(y_val, probs))
+
+#visualize training metrics
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
+
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+
+epochs_range = range(50)
+
+plt.figure(figsize=(8, 8))
+plt.subplot(1, 2, 1)
+plt.plot(epochs_range, acc, label='Training Accuracy')
+plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+plt.legend(loc='lower right')
+plt.xlabel('Epoch Trial')
+plt.ylabel('Accuracy')
+plt.title('Training and Validation Accuracy')
+
+plt.subplot(1, 2, 2)
+plt.plot(epochs_range, loss, label='Training Loss')
+plt.plot(epochs_range, val_loss, label='Validation Loss')
+plt.legend(loc='upper right')
+plt.xlabel('Epoch Trial')
+plt.ylabel('Loss')
+plt.title('Training and Validation Loss')
+
+plt.savefig('metrics_type.png')
+plt.show()
+
+
+# Validation Classification Report:
+#               precision    recall  f1-score   support
+
+#            0       0.99      0.98      0.98      1017
+#            1       0.97      0.99      0.98       896
+
+#     accuracy                           0.98      1913
+#    macro avg       0.98      0.98      0.98      1913
+# weighted avg       0.98      0.98      0.98      1913
+
+# Validation Confusion Matrix:
+# [[994  23]
+#  [ 11 885]]
 
 # # apply to candidate set
 # candidate_probs = model.predict(X_candidates)
