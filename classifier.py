@@ -43,17 +43,19 @@ df["label"] = df["koi_pdisposition"].map(label_map)
 print(df["label"].value_counts(dropna=False))
 
 
-# Features
+# Features: 70% train, 15% val, 5% test
 y = df["label"].values
 X = df.drop(columns=["koi_pdisposition", "koi_disposition", "label", "kepid","kepoi_name"], axis=1)
 
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=1, shuffle = True)
+X_train, X_temp, y_train, y_temp = train_test_split(X, y, test_size=0.3, random_state=1, shuffle = True)
+X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=1, shuffle = True)
 
 #Scale X
 scaler = StandardScaler()
 scaler.fit(X_train)
 X_train = pd.DataFrame(scaler.transform(X_train), index = X_train.index, columns = X_train.columns)
 X_val = pd.DataFrame(scaler.transform(X_val), index = X_val.index, columns = X_val.columns)
+X_test = pd.DataFrame(scaler.transform(X_test), columns=X_test.columns)
 
 #build neural netowrk
 model = Sequential([
@@ -72,17 +74,17 @@ history = model.fit(X_train, y_train, epochs=50, batch_size=64, validation_data=
 # hyperparam tuning: increased batch size from 32 to 64 to remove gradient noise
 
 # Evaluate the model
-y_val_pred = (model.predict(X_val) > 0.5).astype("int32")
+y_test_pred = (model.predict(X_test) > 0.5).astype("int32")
 
-print("Validation Classification Report:")
-print(classification_report(y_val, y_val_pred))
-print("Validation Confusion Matrix:")
-print(confusion_matrix(y_val, y_val_pred))
+print("Test Classification Report:")
+print(classification_report(y_test, y_test_pred))
+print("ValidTestation Confusion Matrix:")
+print(confusion_matrix(y_test, y_test_pred))
 
 #ROC_AUC and PR_AUC
-probs = model.predict(X_val).ravel()
-print("ROC-AUC:", roc_auc_score(y_val, probs))
-print("PR-AUC:", average_precision_score(y_val, probs))
+probs = model.predict(X_test).ravel()
+print("ROC-AUC:", roc_auc_score(y_test, probs))
+print("PR-AUC:", average_precision_score(y_test, probs))
 
 #visualize training metrics
 acc = history.history['accuracy']
