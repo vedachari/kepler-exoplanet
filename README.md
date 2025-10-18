@@ -1,5 +1,8 @@
 # Exoplanet Classifier
 
+## Motivation
+I have always been interested in the vastness of space. So much mathematical genius goes into detecting and classifying objects that we can barely see with the naked eye. I created this project to aim to understand the data better.
+
 ## Overview
 This project applies a Neural Network to detect whether an object is an **exoplanet** using NASA's **Kepler** mission data.  
 The model classifies Kepler Objects of Interest (KOIs) into:
